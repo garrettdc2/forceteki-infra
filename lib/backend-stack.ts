@@ -1,8 +1,8 @@
 import { Construct } from 'constructs';
-import { Stack, StackProps } from 'aws-cdk-lib';
+import { Duration, Stack, StackProps } from 'aws-cdk-lib';
 import { DockerImageAsset, Platform } from 'aws-cdk-lib/aws-ecr-assets';
 import { ApplicationLoadBalancedEc2Service } from 'aws-cdk-lib/aws-ecs-patterns';
-import { AmiHardwareType, AsgCapacityProvider, Cluster, ContainerImage, EcsOptimizedImage } from 'aws-cdk-lib/aws-ecs';
+import { AmiHardwareType, AsgCapacityProvider, Cluster, Compatibility, ContainerImage, Ec2TaskDefinition, EcsOptimizedImage, NetworkMode, Protocol } from 'aws-cdk-lib/aws-ecs';
 import { InstanceType, LaunchTemplate, UserData, Vpc } from 'aws-cdk-lib/aws-ec2';
 import { AutoScalingGroup } from 'aws-cdk-lib/aws-autoscaling';
 import { ManagedPolicy, Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
@@ -50,14 +50,32 @@ export class BackendStack extends Stack {
 
     ecsCluster.addAsgCapacityProvider(capacityProvider);
 
+    const taskDef = new Ec2TaskDefinition(
+        this,
+        'taskDef',
+    )
+    const container = taskDef.addContainer('Container', {
+        image: ContainerImage.fromDockerImageAsset(image),
+        memoryLimitMiB: 512,
+        healthCheck: {
+            command: [ "CMD-SHELL", "curl -f http://localhost/api/health || exit 1" ],
+            // the properties below are optional
+            interval: Duration.minutes(5),
+            retries: 3,
+            startPeriod: Duration.minutes(5),
+            timeout: Duration.seconds(30),
+        }
+    })
+    container.addPortMappings({
+        containerPort: 9500,
+        protocol: Protocol.TCP
+    })
+
     const karabastEcs = new ApplicationLoadBalancedEc2Service(this, 'KarabastService', {
-        taskImageOptions: {
-            image: ContainerImage.fromDockerImageAsset(image),
-            containerPort: 9500
-        },
+        taskDefinition: taskDef,
         publicLoadBalancer: true,
         memoryLimitMiB: 1024,
         cluster: ecsCluster
-    })
+    });
   }
 }
