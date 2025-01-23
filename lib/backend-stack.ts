@@ -26,16 +26,16 @@ export class BackendStack extends Stack {
       serviceName: 'karabast-service',
       loadBalancerName: 'karabast-alb',
       cluster: ecsCluster,
-      memoryLimitMiB: 512,
-      cpu: 256, // 0.25 vCPU
+      memoryLimitMiB: 4096, // 4 GB
+      cpu: 2048, // 2 vCPU
       taskImageOptions: {
           image: ContainerImage.fromDockerImageAsset(image),
           containerPort: 9500
       },
       desiredCount: 2,
-      })
+    })
 
-      service.targetGroup.configureHealthCheck({
+    service.targetGroup.configureHealthCheck({
       path: "/api/health"
     })
   }
