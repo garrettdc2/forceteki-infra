@@ -11,7 +11,7 @@ export class BackendStack extends Stack {
 
     const image = new DockerImageAsset(this, 'Image', {
         directory: '../forceteki',
-        platform: Platform.LINUX_ARM64,
+        platform: Platform.LINUX_AMD64,
         buildArgs: {
             BUILDX_NO_DEFAULT_ATTESTATIONS: '1'
         },
@@ -32,7 +32,7 @@ export class BackendStack extends Stack {
           image: ContainerImage.fromDockerImageAsset(image),
           containerPort: 9500
       },
-      desiredCount: 2,
+      desiredCount: 1,
     })
 
     service.targetGroup.configureHealthCheck({
