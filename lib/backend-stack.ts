@@ -1,6 +1,8 @@
 import { Construct } from 'constructs';
 import { Stack, StackProps } from 'aws-cdk-lib';
 import { DockerImageAsset, Platform } from 'aws-cdk-lib/aws-ecr-assets';
+import { ApplicationLoadBalancer, ListenerAction, ApplicationListener } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import { Certificate } from 'aws-cdk-lib/aws-certificatemanager';
 import { ApplicationLoadBalancedFargateService } from 'aws-cdk-lib/aws-ecs-patterns';
 import { Cluster, ContainerImage } from 'aws-cdk-lib/aws-ecs';
 import { Vpc } from 'aws-cdk-lib/aws-ec2';
@@ -22,6 +24,8 @@ export class BackendStack extends Stack {
         vpc
     })
 
+    const certificate = Certificate.fromCertificateArn(this, "SSLCert", "arn:aws:acm:us-east-1:182399701650:certificate/8f910147-045a-4e88-a04c-494d5cd2980d");
+
     const service = new ApplicationLoadBalancedFargateService(this, "Service", {
       serviceName: 'karabast-service',
       loadBalancerName: 'karabast-alb',
@@ -33,10 +37,13 @@ export class BackendStack extends Stack {
           containerPort: 9500
       },
       desiredCount: 1,
+      certificate: certificate,
+      redirectHTTP: true,
     })
 
     service.targetGroup.configureHealthCheck({
-      path: "/api/health"
-    })
+      path: "/api/health",
+      port: "9500",
+    });    
   }
 }
