@@ -6,5 +6,9 @@
     "us-east-1d",
     "us-east-1e",
     "us-east-1f"
-  ]
+  ],
+  "hosted-zone:account=182399701650:domainName=beta.karabast.net:region=us-east-1": {
+    "Id": "/hostedzone/Z0480540G75MNW37ZSJI",
+    "Name": "beta.karabast.net."
+  }
 }
