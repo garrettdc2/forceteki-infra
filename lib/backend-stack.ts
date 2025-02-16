@@ -1,8 +1,9 @@
 import { Construct } from 'constructs';
 import { Stack, StackProps } from 'aws-cdk-lib';
 import { DockerImageAsset, Platform } from 'aws-cdk-lib/aws-ecr-assets';
-import { ApplicationLoadBalancer, ListenerAction, ApplicationListener } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
-import { Certificate } from 'aws-cdk-lib/aws-certificatemanager';
+import { HostedZone, ARecord, RecordTarget } from 'aws-cdk-lib/aws-route53';
+import { LoadBalancerTarget } from 'aws-cdk-lib/aws-route53-targets';
+import { Certificate, CertificateValidation,  } from 'aws-cdk-lib/aws-certificatemanager';
 import { ApplicationLoadBalancedFargateService } from 'aws-cdk-lib/aws-ecs-patterns';
 import { Cluster, ContainerImage } from 'aws-cdk-lib/aws-ecs';
 import { Vpc } from 'aws-cdk-lib/aws-ec2';
@@ -18,13 +19,23 @@ export class BackendStack extends Stack {
             BUILDX_NO_DEFAULT_ATTESTATIONS: '1'
         },
     })
-    const vpc = new Vpc(this, 'Vpc');
+    const vpc = new Vpc(this, 'Vpc', {
+      vpcName: 'karabast-vpc',
+    });
 
     const ecsCluster = new Cluster(this, 'EcsCluster', {
-        vpc
+        vpc,
+        clusterName: 'karabast-cluster',
     })
 
-    const certificate = Certificate.fromCertificateArn(this, "SSLCert", "arn:aws:acm:us-east-1:182399701650:certificate/8f910147-045a-4e88-a04c-494d5cd2980d");
+    const hostedZone = HostedZone.fromLookup(this, 'HostedZone', {
+      domainName: 'beta.karabast.net',
+    });
+
+    const certificate = new Certificate(this, 'KarabastCertificate', {
+      domainName: 'api.beta.karabast.net',
+      validation: CertificateValidation.fromDns(hostedZone),
+    });
 
     const service = new ApplicationLoadBalancedFargateService(this, "Service", {
       serviceName: 'karabast-service',
@@ -45,5 +56,11 @@ export class BackendStack extends Stack {
       path: "/api/health",
       port: "9500",
     });    
+
+    new ARecord(this, 'KarabastApiRecord', {
+      zone: hostedZone,
+      recordName: 'api.beta.karabast.net',
+      target: RecordTarget.fromAlias(new LoadBalancerTarget(service.loadBalancer)),
+    });
   }
 }
