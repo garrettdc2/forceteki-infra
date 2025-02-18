@@ -8,6 +8,9 @@ import { ApplicationLoadBalancedFargateService } from 'aws-cdk-lib/aws-ecs-patte
 import { Cluster, ContainerImage } from 'aws-cdk-lib/aws-ecs';
 import { Vpc } from 'aws-cdk-lib/aws-ec2';
 
+/**
+ * Contains the infra for the Karabast server.
+ */
 export class BackendStack extends Stack {
   constructor(scope: Construct, id: string, props: StackProps) {
     super(scope, id, props);
