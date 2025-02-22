@@ -24,6 +24,8 @@ export class BackendStack extends Stack {
     })
     const vpc = new Vpc(this, 'Vpc', {
       vpcName: 'karabast-vpc',
+      maxAzs: 1,
+      natGateways: 1,
     });
 
     const ecsCluster = new Cluster(this, 'EcsCluster', {
